@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 SampleApp::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
 
@@ -34,4 +35,11 @@ SampleApp::Application.configure do
 
   # Print deprecation notices to the stderr
   config.active_support.deprecation = :stderr
+
+  # 把bcrpt加密时间设为最小，以此来加快测试速度
+  require 'bcrypt'
+  silence_warnings do
+    BCrypt::Engine::DEFAULT_COST = BCrypt::Engine::MIN_COST
+  end
+
 end
