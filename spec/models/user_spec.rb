@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # == Schema Information
 #
 # Table name: users
@@ -29,6 +30,7 @@ describe User do
   it { should respond_to(:authenticate) }
   it { should respond_to(:remember_token) }
   it { should respond_to(:admin) }
+  it { should respond_to(:microposts)}
 
   it { should be_valid }
   it { should_not be_admin }
@@ -125,5 +127,37 @@ describe User do
     before { @user.save }
     its(:remember_token) { should_not be_blank }
   end
+
+
+  describe "micropost association" do
+    before { @user.save }
+    let!(:older_micropost) { FactoryGirl.create(:micropost, user: @user, created_at: 1.day.ago)}
+    let!(:newer_micropost) { FactoryGirl.create(:micropost, user: @user, created_at: 1.hour.ago)}
+
+    it "should have right microposts in the right order" do
+      @user.microposts == [:newer_micropost, :older_micropost]
+    end
+
+    it "should destroy associated microposts" do
+      microposts = @user.microposts.dup
+      @user.destroy
+      microposts.should_not be_empty
+      microposts.each do |micropost|
+        Micropost.find_by_id(micropost.id).should be_nil  # find_by_id 找不到时，会返回 nil，而 find 找不到时，会抛异常，故          三中测试任意一种都可以
+        # lambda { Micropost.find(micropost.id) }.should raise_error(ActiveRecord::RecordNotFound)
+        expect { Micropost.find(micropost.id) }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+    end
+
+    describe "status" do
+      let(:unfollowed_post){ FactoryGirl.create(:micropost, user: FactoryGirl.create(:user)) }
+
+      its(:feed) { should include(newer_micropost) }
+      its(:feed) { should include(older_micropost) }
+      its(:feed) { should_not include(unfollowed_post) }
+    end
+
+  end
+
 
 end

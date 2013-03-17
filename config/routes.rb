@@ -3,6 +3,7 @@ SampleApp::Application.routes.draw do
   root to: 'static_pages#home'
 
   resources :users
+  resources :microposts, only: [:create, :destroy]
   resources :sessions, only: [:new, :create, :destroy]
 
   match '/help', to: 'static_pages#help'
