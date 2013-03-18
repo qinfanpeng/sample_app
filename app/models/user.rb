@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # == Schema Information
 #
 # Table name: users
@@ -20,6 +21,11 @@ class User < ActiveRecord::Base
   validates :email, presence: true, format: { with: VALID_EMAIL_REGEX }, uniqueness: { case_sensitive: false }
 
   has_many :microposts, dependent: :destroy
+  has_many :relationships, foreign_key: "follower_id", dependent: :destroy
+  has_many :followed_users, :through => :relationships, :source => :followed #source 用于指定followed_users 数据组成来源是由followed_id 构成的
+  has_many :reverse_relationships, foreign_key: "followed_id", dependent: :destroy, class_name: "Relationship"
+  has_many :followers, :through => :reverse_relationships, :source => :follower
+
   has_secure_password
 
   before_save {self.email.downcase }
@@ -27,7 +33,20 @@ class User < ActiveRecord::Base
 
   def feed
     # self.microposts
-    Micropost.where('user_id=?', id)
+    Micropost.where("user_id IN (?) OR user_id = ?", followed_user_ids, id)
+  end
+
+  def following?(other_user)
+    relationships.find_by_followed_id(other_user.id)
+  end
+
+
+  def follow!(other_user)
+    relationships.create!(followed_id: other_user.id)
+  end
+
+  def unfollow!(other_user)
+    relationships.find_by_followed_id(other_user.id).destroy
   end
 
   private
